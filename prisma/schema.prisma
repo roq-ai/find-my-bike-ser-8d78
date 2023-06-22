@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model appointment {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  bike_owner_id String?    @db.Uuid
+  time_slot_id  String?    @db.Uuid
+  status        String     @db.VarChar(255)
+  created_at    DateTime   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime   @default(now()) @db.Timestamp(6)
+  user          user?      @relation(fields: [bike_owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  time_slot     time_slot? @relation(fields: [time_slot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model bike_repair_station {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name            String        @db.VarChar(255)
+  location        String        @db.VarChar(255)
+  organization_id String?       @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @default(now()) @db.Timestamp(6)
+  organization    organization? @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  time_slot       time_slot[]
+}
+
+model organization {
+  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  description         String?               @db.VarChar(255)
+  image               String?               @db.VarChar(255)
+  name                String                @db.VarChar(255)
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  user_id             String                @db.Uuid
+  tenant_id           String                @db.VarChar(255)
+  bike_repair_station bike_repair_station[]
+  user                user                  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model time_slot {
+  id                     String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  start_time             DateTime             @db.Timestamp(6)
+  end_time               DateTime             @db.Timestamp(6)
+  bike_repair_station_id String?              @db.Uuid
+  created_at             DateTime             @default(now()) @db.Timestamp(6)
+  updated_at             DateTime             @default(now()) @db.Timestamp(6)
+  appointment            appointment[]
+  bike_repair_station    bike_repair_station? @relation(fields: [bike_repair_station_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  firstName    String?        @db.VarChar(255)
+  lastName     String?        @db.VarChar(255)
+  roq_user_id  String         @db.VarChar(255)
+  tenant_id    String         @db.VarChar(255)
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  updated_at   DateTime       @default(now()) @db.Timestamp(6)
+  appointment  appointment[]
+  organization organization[]
+}
